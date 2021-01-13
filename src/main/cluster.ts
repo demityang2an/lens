@@ -237,7 +237,7 @@ export class Cluster implements ClusterModel, ClusterState {
    * Kubernetes version
    */
   get version(): string {
-    return String(this.metadata?.version) || "";
+    return String(this.metadata?.version || "");
   }
 
   constructor(model: ClusterModel) {

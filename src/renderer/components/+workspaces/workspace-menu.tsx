@@ -44,8 +44,8 @@ export class WorkspaceMenu extends React.Component<Props> {
         open={() => this.menuVisible = true}
         close={() => this.menuVisible = false}
       >
-        <Link className="workspaces-title" to={workspacesURL()}>
-          Workspaces
+        <Link className="workspaces-title" to={landingURL()}>
+          Workspace Overview
         </Link>
         {enabledWorkspacesList.map(({ id: workspaceId, name, description }) => {
           return (

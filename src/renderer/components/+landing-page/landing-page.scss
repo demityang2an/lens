@@ -4,25 +4,6 @@
   text-align: center;
   z-index: 0;
 
-  &::after {
-    content: "";
-    background: url(../../components/icon/crane.svg) no-repeat;
-    background-position: 0 35%;
-    background-size: 85%;
-    background-clip: content-box;
-    opacity: .75;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    right: 0;
-    position: absolute;
-    z-index: -1;
-
-    .theme-light & {
-      opacity: 0.2;
-    }
-  }
-
   .startup-hint {
     $bgc: $mainBackground;
     $arrowSize: 10px;
@@ -36,6 +17,7 @@
     background: $bgc;
     color: $textColorAccent;
     filter: drop-shadow(0 0px 2px #ffffff33);
+    z-index: 1000;
 
     &:before {
       content: "";

@@ -325,6 +325,7 @@ export class ItemListLayout extends React.Component<ItemListLayoutProps> {
   }
 
   renderHeaderContent(placeholders: IHeaderPlaceholders): ReactNode {
+    const { isSearchable, searchFilters } = this.props;
     const { title, filters, search, info } = placeholders;
 
     return (
@@ -334,7 +335,7 @@ export class ItemListLayout extends React.Component<ItemListLayoutProps> {
           {this.isReady && info}
         </div>
         {filters}
-        {search}
+        {isSearchable && searchFilters && search}
       </>
     );
   }
