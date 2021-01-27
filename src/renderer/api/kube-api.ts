@@ -339,7 +339,7 @@ export class KubeApi<T extends KubeObject = any> {
     await this.checkPreferredVersion();
     const apiUrl = this.getUrl({ namespace });
 
-    const res = this.request.post(apiUrl, {
+    const res = await this.request.post(apiUrl, {
       data: merge({
         kind: this.kind,
         apiVersion: this.apiVersionWithGroup,
