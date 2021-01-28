@@ -87,27 +87,27 @@ function createTrayMenu(windowManager: WindowManager): Menu {
     {
       label: "Clusters",
       submenu: workspaceStore.enabledWorkspacesList
+        .filter(workspace => clusterStore.getByWorkspaceId(workspace.id).length > 0) // hide empty workspaces
         .map(workspace => {
           const clusters = clusterStore.getByWorkspaceId(workspace.id);
-
-          if (clusters.length === 0) {
-            return;
-          }
 
           return {
             label: workspace.name,
             toolTip: workspace.description,
-            submenu: clusters.map(({ id: clusterId, name: label, online, workspace }) => ({
-              label: `${online ? "✓" : "\x20".repeat(3)/*offset*/}${label}`,
-              toolTip: clusterId,
-              async click() {
-                workspaceStore.setActive(workspace);
-                windowManager.navigate(clusterViewURL({ params: { clusterId } }));
-              }
-            }))
+            submenu: clusters.map(cluster => {
+              const { id: clusterId, name: label, online, workspace } = cluster;
+
+              return {
+                label: `${online ? "✓" : "\x20".repeat(3)/*offset*/}${label}`,
+                toolTip: clusterId,
+                async click() {
+                  workspaceStore.setActive(workspace);
+                  windowManager.navigate(clusterViewURL({ params: { clusterId } }));
+                }
+              };
+            })
           };
-        })
-        .filter(Boolean),
+        }),
     },
     {
       label: "Check for updates",
