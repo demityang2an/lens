@@ -29,21 +29,16 @@ export function broadcastMessage(channel: string, ...args: any[]) {
 
   if (!views) return;
 
-  views.forEach(async webContent => {
+  views.forEach(webContent => {
     const type = webContent.getType();
 
     logger.silly(`[IPC]: broadcasting "${channel}" to ${type}=${webContent.id}`, { args });
     webContent.send(channel, ...args);
-
-    try {
-      const frames = await getSubFrames();
-
-      for (const frameInfo of frames) {
+    getSubFrames().then((frames) => {
+      frames.map((frameInfo) => {
         webContent.sendToFrame([frameInfo.processId, frameInfo.frameId], channel, ...args);
-      }
-    } catch (error) {
-      logger.error("[IPC]: failed to send IPC message", { error });
-    }
+      });
+    }).catch((e) => e);
   });
 
   if (ipcRenderer) {
