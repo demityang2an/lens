@@ -160,7 +160,7 @@ jobs:
         displayName: Install integration test dependencies
       - bash: |
           rm -rf extensions/telemetry
-          xvfb-run --auto-servernum --server-args='-screen 0, 1600x900x24' scripts/integration.sh linux
+          xvfb-run --auto-servernum --server-args='-screen 0, 1600x900x24' make integration-linux
           git checkout extensions/telemetry
         displayName: Run integration tests
       - bash: |

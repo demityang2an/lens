@@ -36,6 +36,24 @@ lint:
 test: binaries/client
 	yarn test
 
+.PHONY: integration-linux
+integration-linux: build-extension-types build-extensions
+	find ~/.config/Logs/Lens -type f -name *.log -delete
+	yarn build:linux
+	DEBUG=true yarn integration || { find ~/.config/Logs/Lens -type f -name *.log -exec cat >&2 {} \;; exit 1 }
+
+.PHONY: integration-mac
+integration-mac: build-extension-types build-extensions
+	find ~/Library/Logs/Lens -type f -name *.log -delete
+	yarn build:mac
+	DEBUG=true yarn integration || { find ~/Library/Logs/Lens -type f -name *.log -exec cat >&2 {} \;; exit 1 }
+
+.PHONY: integration-win
+integration-win: build-extension-types build-extensions
+	find %APPDATA%/Logs/Lens -type f -name *.log -delete
+	yarn build:win
+	DEBUG=true yarn integration || { find %APPDATA%/Logs/Lens -type f -name *.log -exec cat >&2 {} \;; exit 1 }
+
 .PHONY: test-app
 test-app:
 	yarn test
