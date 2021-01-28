@@ -90,12 +90,12 @@ describe("Lens integration tests", () => {
 
     describe("protocol app start", () => {
       it("should handle opening lens:// links", async () => {
-        await open("lens://internal/foobar");
+        await open("lens://app/foobar");
 
-        await Promise.all([
-          utils.waitForLogsToContain(app, "main", "No handler", "lens://internal/foobar"),
-          utils.waitForLogsToContain(app, "renderer", "No handler", "lens://internal/foobar"),
-        ]);
+        await utils.waitForLogsToContain(app, {
+          main: ["No handler", "lens://app/foobar"],
+          renderer: ["No handler", "lens://app/foobar"],
+        });
       });
     });
 
@@ -524,18 +524,11 @@ describe("Lens integration tests", () => {
         await app.client.keys("kube-system");
         await app.client.keys("Enter");// "\uE007"
         await app.client.waitUntilTextExists("div.TableCell", "kube-apiserver");
-        let podMenuItemEnabled = false;
 
-        // Wait until extensions are enabled on renderer
-        while (!podMenuItemEnabled) {
-          const logs = await app.client.getRenderProcessLogs();
+        await utils.waitForLogsToContain(app, {
+          renderer: ["[EXTENSION]: enabled lens-pod-menu@"],
+        });
 
-          podMenuItemEnabled = !!logs.find(entry => entry.message.includes("[EXTENSION]: enabled lens-pod-menu@"));
-
-          if (!podMenuItemEnabled) {
-            await new Promise(r => setTimeout(r, 1000));
-          }
-        }
         await new Promise(r => setTimeout(r, 500)); // Give some extra time to prepare extensions
         // Open logs tab in dock
         await app.client.click(".list .TableRow:first-child");
