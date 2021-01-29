@@ -1,93 +1,34 @@
 import { autoUpdater, UpdateInfo } from "electron-updater";
 import logger from "./logger";
-import { NotificationChannelAdd, NotificationChannelPrefix } from "../common/notification-ipc";
-import { ipcMain } from "electron";
 import { isDevelopment, isTestEnv } from "../common/vars";
-import { WindowManager } from "./window-manager";
 import { delay } from "../common/utils";
+import { areArgsUpdateAvailableToBackchannel, AutoUpdateLogPrefix, broadcastMessage, onceCorrect, UpdateAvailableChannel, UpdateAvailableToBackchannel } from "../common/ipc";
+import * as uuid from "uuid";
+import { ipcMain } from "electron";
 
-class NotificationBackchannel {
-  private static _id = 0;
-
-  static nextId(): string {
-    return `${NotificationChannelPrefix}${NotificationBackchannel._id++}`;
-  }
-}
-
-const title = "Lens Updater";
-
-async function autoUpdateCheck(windowManager: WindowManager, args: UpdateInfo): Promise<void> {
-  return new Promise(async resolve => {
-    const body = `Version ${args.version} of Lens IDE is now available. Would you like to update?`;
-    const yesNowChannel = NotificationBackchannel.nextId();
-    const yesLaterChannel = NotificationBackchannel.nextId();
-    const noChannel = NotificationBackchannel.nextId();
-
-    function cleanupChannels() {
-      ipcMain.removeAllListeners(yesNowChannel);
-      ipcMain.removeAllListeners(yesLaterChannel);
-      ipcMain.removeAllListeners(noChannel);
+function handleAutoUpdateBackChannel(event: Electron.IpcMainEvent, ...[arg]: UpdateAvailableToBackchannel) {
+  if (arg.doUpdate) {
+    if (arg.now) {
+      logger.info(`${AutoUpdateLogPrefix}: User chose to update now`);
+      autoUpdater.downloadUpdate()
+        .then(() => autoUpdater.quitAndInstall())
+        .catch(error => logger.error(`${AutoUpdateLogPrefix}: Failed to download or install update`, { error }));
+    } else {
+      logger.info(`${AutoUpdateLogPrefix}: User chose to update on quit`);
+      autoUpdater.autoInstallOnAppQuit = true;
+      autoUpdater.downloadUpdate()
+        .catch(error => logger.error(`${AutoUpdateLogPrefix}: Failed to download update`, { error }));
     }
-
-    ipcMain
-      .on(yesNowChannel, async () => {
-        logger.info("[UPDATE CHECKER]: User chose to update immediately");
-        cleanupChannels();
-
-        await autoUpdater.downloadUpdate();
-        autoUpdater.quitAndInstall();
-
-        resolve();
-      })
-      .on(yesLaterChannel, async () => {
-        logger.info("[UPDATE CHECKER]: User chose to update on quit");
-        cleanupChannels();
-
-        await autoUpdater.downloadUpdate();
-        autoUpdater.autoInstallOnAppQuit = true;
-
-        resolve();
-      })
-      .on(noChannel, () => {
-        logger.info("[UPDATE CHECKER]: User chose not to update");
-        cleanupChannels();
-        resolve();
-      });
-
-    windowManager.sendToView({
-      channel: NotificationChannelAdd,
-      data: [{
-        title,
-        body,
-        status: "info",
-        buttons: [
-          {
-            label: "Yes, now",
-            backchannel: yesNowChannel,
-            action: true,
-          },
-          {
-            label: "Yes, on quit",
-            backchannel: yesLaterChannel,
-            action: true,
-          },
-          {
-            label: "No",
-            backchannel: noChannel,
-            secondary: true
-          }
-        ],
-        closeChannel: noChannel,
-      }]
-    });
-  });
+  } else {
+    logger.info(`${AutoUpdateLogPrefix}: User chose not to update`);
+  }
 }
 
 /**
  * starts the automatic update checking
  * @param interval milliseconds between interval to check on, defaults to 24h
  */
-export function startUpdateChecking(windowManager: WindowManager, interval = 1000 * 60 * 60 * 24): void {
+export function startUpdateChecking(interval = 1000 * 60 * 60 * 24): void {
   if (isDevelopment || isTestEnv) {
     return;
   }
@@ -97,11 +38,17 @@ export function startUpdateChecking(windowManager: WindowManager, interval = 100
   autoUpdater.autoInstallOnAppQuit = false;
 
   autoUpdater
-    .on("update-available", async (args: UpdateInfo) => {
+    .on("update-available", (args: UpdateInfo) => {
       try {
-        await autoUpdateCheck(windowManager, args);
+        // use a UUID so that this back-channel is harder to discover
+        const backchannel = uuid.v4();
+
+        // make sure that the handler is in place before broadcasting (prevent race-condition)
+        onceCorrect(ipcMain, backchannel, handleAutoUpdateBackChannel, areArgsUpdateAvailableToBackchannel);
+        logger.info(`${AutoUpdateLogPrefix}: broadcasting update available`, { backchannel, version: args.version });
+        broadcastMessage(UpdateAvailableChannel, backchannel, args);
       } catch (error) {
-        logger.error("[UPDATE CHECKER]: notification failed", { error: String(error) });
+        logger.error(`${AutoUpdateLogPrefix}: broadcasting failed`, { error });
       }
     });
 
@@ -119,6 +66,6 @@ export async function checkForUpdates(): Promise<void> {
   try {
     await autoUpdater.checkForUpdates();
   } catch (error) {
-    logger.error("[UPDATE CHECKER]: failed with an error", { error: String(error) });
+    logger.error(`${AutoUpdateLogPrefix}: failed with an error`, { error: String(error) });
   }
 }

@@ -7,10 +7,11 @@ import { history } from "./navigation";
 import { ClusterManager } from "./components/cluster-manager";
 import { ErrorBoundary } from "./components/error-boundary";
 import { WhatsNew, whatsNewRoute } from "./components/+whats-new";
-import { Notifications, notificationsStore } from "./components/notifications";
+import { Notifications } from "./components/notifications";
 import { ConfirmDialog } from "./components/confirm-dialog";
 import { extensionLoader } from "../extensions/extension-loader";
 import { broadcastMessage } from "../common/ipc";
+import { registerIpcHandlers } from "./ipc";
 
 @observer
 export class LensApp extends React.Component {
@@ -23,7 +24,7 @@ export class LensApp extends React.Component {
       broadcastMessage("network:online");
     });
 
-    notificationsStore.registerIpcListener();
+    registerIpcHandlers();
   }
 
   render() {

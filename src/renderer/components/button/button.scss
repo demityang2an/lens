@@ -26,12 +26,9 @@
     background: $buttonAccentBackground;
   }
 
-  &.action {
-    background: $buttonActionBackground;
-  }
-
-  &.secondary {
-    background: $buttonSecondaryBackground;
+  &.light {
+    background-color: white;
+    color: #505050;
   }
 
   &.plain {
@@ -54,6 +51,7 @@
   &.outlined {
     color: inherit;
     background: transparent;
+    border: 1px solid;
 
     &.active,
     &:focus {
