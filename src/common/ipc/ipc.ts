@@ -31,9 +31,9 @@ export function onceCorrect<EM extends EventEmitter, Args extends any[]>(source:
       source.removeListener(channel, handler); // remove immediately
 
       Promise.resolve(listener(event, ...args)) // might return a promise
-        .catch(error => logger.crit("[IPC]: channel once handler threw error", { channel, error }));
+        .catch(error => logger.error("[IPC]: channel once handler threw error", { channel, error }));
     } else {
-      logger.crit("[IPC]: channel was sent to with invalid data", { channel, args });
+      logger.error("[IPC]: channel was sent to with invalid data", { channel, args });
     }
   }
 
@@ -50,9 +50,9 @@ export function onCorrect<EM extends EventEmitter, Args extends any[]>(source: E
   source.on(channel, (event, ...args: unknown[]) => {
     if (verifier(args)) {
       Promise.resolve(listener(event, ...args)) // might return a promise
-        .catch(error => logger.crit("[IPC]: channel on handler threw error", { channel, error }));
+        .catch(error => logger.error("[IPC]: channel on handler threw error", { channel, error }));
     } else {
-      logger.crit("[IPC]: channel was sent to with invalid data", { channel, args });
+      logger.error("[IPC]: channel was sent to with invalid data", { channel, args });
     }
   });
 }
